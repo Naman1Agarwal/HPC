@@ -1,0 +1,15 @@
+
+create struct representing struct, should have rows, cols, and ptr to
+array
+
+function tos parse arguments
+ - decide to read from file
+ - decide to create random matrix
+
+
+single interation function based on args
+
+function to print array
+
+
+loop to repeat iteration function
