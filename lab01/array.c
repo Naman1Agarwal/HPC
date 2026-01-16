@@ -1,22 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-
-typedef struct matrix{
-    int rows;
-    int cols;
-    int** arr;
-}matrix;
-
-typedef struct simulation{
-    int iterations;
-    int threshold;
-    int freq;
-    int seed;
-    matrix* mat;
-}simulation;
+#include "array.h"
 
 
 void printArray(matrix* m){
