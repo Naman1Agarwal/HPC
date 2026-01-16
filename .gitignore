@@ -1,0 +1,90 @@
+# =========================
+# Compiled binaries
+# =========================
+*.out
+*.exe
+*.app
+*.elf
+
+# Common executable names
+a.out
+main
+program
+
+# =========================
+# Object files
+# =========================
+*.o
+*.obj
+*.lo
+
+# =========================
+# Libraries
+# =========================
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# =========================
+# Build directories
+# =========================
+build/
+bin/
+dist/
+out/
+obj/
+cmake-build-*/
+
+# =========================
+# Debug / profiling files
+# =========================
+*.dSYM/
+*.su
+*.gcda
+*.gcno
+*.gcov
+gmon.out
+
+# =========================
+# Make / CMake
+# =========================
+*.depend
+*.log
+Makefile~
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# =========================
+# Editors & IDEs
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*~
+.#*
+
+# =========================
+# OS-specific
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing / coverage
+# =========================
+coverage/
+*.profraw
+*.profdata
+
+# =========================
+# Misc
+# =========================
+tags
+*.stackdump
+

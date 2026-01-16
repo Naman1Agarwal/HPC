@@ -214,7 +214,7 @@ int main(int argc, char* argv[]){
             exit(EXIT_FAILURE);
         }
         if (sscanf(argv[6], "%d", &cols) != 1){
-            fprintf(stderr, "rror: Input is not numbers");
+            fprintf(stderr, "Error: Input is not numbers");
             exit(EXIT_FAILURE);
         }
         sim->mat = initMat(rows, cols);
