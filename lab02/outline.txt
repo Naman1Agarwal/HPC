@@ -1,0 +1,35 @@
+
+/*
+struct to represent state of simulation
+struct to represent matrix
+*/
+
+/*
+    single node update function
+    follows conway game of rules
+    takes one grid and i,j location possibly
+    returns 1 or 0 to update
+*/
+
+/*
+single update function 
+    takes two grids
+    will loop through first grid and update the second grid based on it
+    will use rules
+*/
+
+/*
+loop to repeat update function
+every loop switch pointers for grid 1 and grid 2
+*/
+
+/*
+Notes: 
+    use int_8 to reduce memory size of arr
+    each grid is 2 rows and 2 cols bigger
+    so that wrapping mechanism is faster
+*/
+
+/*
+parses args and reads file same way as lab 1
+*/
