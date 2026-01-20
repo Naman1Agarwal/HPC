@@ -4,12 +4,14 @@
 #include <time.h>
 #include <errno.h>
 
+// this struct will store our matrix of numbers 
 typedef struct matrix{
     int rows;
     int cols;
     int** arr;
 }matrix;
 
+// this struct will store the state of our simulation
 typedef struct simulation{
     int iterations;
     int threshold;
