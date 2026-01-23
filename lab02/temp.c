@@ -27,10 +27,10 @@ typedef struct simulation{
 /*
 prints array
 */ 
-void printArray(matrix* m){
-    for (index_t  i = 0; i < m->rows; i++){
-        for (index_t j = 0; j < m->cols; j++){
-            printf("%hhu ", m->arr[i][j]);
+void printArray(matrix* m, index_t offset){
+    for (index_t  i = offset; i < m->rows-offset; i++){
+        for (index_t j = offset; j < m->cols-offset; j++){
+            printf("%u ", (unsigned int) m->arr[i][j]);
         }
         printf("\n");
     }
@@ -47,6 +47,7 @@ int parseArgs(simulation* sim, index_t offset, char* argv[]){
     if ( sscanf(argv[offset+1], "%d", &sim->freq) != 1 ){
         return 1;
     }
+
     return 0;
 }
 
@@ -67,14 +68,13 @@ matrix* initMat(index_t rows, index_t cols){
 }
 
 
-
 /*
-allocates memory to hold 2d grid of numbers
+reads unsigned numbers from file to init grid of lives
 */ 
 matrix* readFile(FILE* fd){
     char buf[1024];
     char *p_rows, *p_cols, *p_n;
-    int rows, cols, n;
+    index_t rows, cols, n;
     
     // reads first line
     fgets(buf, sizeof buf, fd);
@@ -82,15 +82,15 @@ matrix* readFile(FILE* fd){
     p_cols = strtok(NULL, " ");
     p_n = strtok(NULL, " ");
 
-    if (sscanf(p_rows, "%d", &rows) != 1 || rows <= 0){
+    if (sscanf(p_rows, "%u", &rows) != 1){
         fprintf(stderr, "Error: File contains invalid input");
         exit(EXIT_FAILURE);
     }
-    if (sscanf(p_cols, "%d", &cols) != 1 || cols <= 0){
+    if (sscanf(p_cols, "%u", &cols) != 1){
         fprintf(stderr, "Error: File contains invalid input");
         exit(EXIT_FAILURE);
     }
-    if (sscanf(p_n, "%d", &n) != 1 || n <= 0){
+    if (sscanf(p_n, "%u", &n) != 1){
         fprintf(stderr, "Error: File contains invalid input");
         exit(EXIT_FAILURE);
     }
@@ -99,14 +99,14 @@ matrix* readFile(FILE* fd){
     value_t** arr = mat->arr;
 
     // read each line and changes the value in arr
-    char *p_x, *p_y, *p_val;
-    value_t x, y, val;
+    char *p_x, *p_y;
+    value_t x, y;
+
     for (index_t i = 0; i < n; i++){
         fgets(buf, sizeof buf, fd);
         p_x = strtok(buf, " ");
         p_y = strtok(NULL, " ");
-        p_val = strtok(NULL, " ");
-        
+
         if (sscanf(p_x, "%hhu", &x) != 1){
             fprintf(stderr, "Error: File contains non-integer input");
             exit(EXIT_FAILURE);
@@ -115,13 +115,9 @@ matrix* readFile(FILE* fd){
             fprintf(stderr, "Error: File contains non-integer input");
             exit(EXIT_FAILURE);
         }
-        if (sscanf(p_val, "%hhu", &val) != 1){
-            fprintf(stderr, "Error: File contains non-integer input");
-            exit(EXIT_FAILURE);
-        }
 
         if (x < rows && y < cols && x >= 0 && y >= 0){
-            arr[x+1][y+1] = val;
+            arr[x+1][y+1] = 1;
         }
         else{
             fprintf(stderr, "Error: File input outside bounds of matrix");
@@ -130,6 +126,145 @@ matrix* readFile(FILE* fd){
     }
 
     return mat;
+}
+
+
+/*
+generates random lives for the grid
+*/ 
+void genRandVals(matrix* mat, index_t offset){
+
+    for (index_t i = offset; i < mat->rows-offset; i++){
+        for (index_t j = offset; j < mat->cols-offset; j++){
+            mat->arr[i][j] = (value_t) ( rand()%2 );
+        }
+    }
+}
+
+
+/*
+determines whether node at i and j will remain alive for next generation
+*/ 
+value_t nodeUpdate(value_t** m, index_t i, index_t j){
+    value_t nalive = 0;
+    value_t isalive = m[i][j];
+
+    for (index_t testi = i-1; testi <= i+1; testi++){
+        for (index_t testj = j-1; testj <= j+1; testj++){
+
+            if (testi == i && testj == j){
+                continue;
+            }
+
+            if (m[testi][testj] == 1){
+                nalive++;
+            }
+        }
+    }
+
+    if (isalive && ( nalive == 2 || nalive == 3) ){
+        return 1;
+    }
+    else if (!isalive && (nalive == 3)){
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/*
+*/
+void updateEdges(matrix* m, index_t offset){
+
+    index_t rows = m->rows;
+    index_t cols = m->cols;
+    index_t rl_bound = offset;
+    index_t ru_bound = rows-offset-1;
+    index_t cl_bound = offset;
+    index_t cu_bound = cols-offset-1;
+
+    // sides
+    for (index_t j = cl_bound; j <= cu_bound; j++){
+        if (m->arr[rl_bound][j] == 1) {
+            m->arr[ru_bound+1][j] = 1;
+        }
+    }
+    for (index_t j = cl_bound; j <= cu_bound; j++){
+        if (m->arr[ru_bound][j] == 1) {
+            m->arr[rl_bound-1][j] = 1;
+        }
+    }
+
+    for (index_t i = rl_bound; i <= ru_bound; i++){
+        if (m->arr[i][cl_bound] == 1) {
+            m->arr[i][cu_bound+1] = 1;
+        }
+    }
+    for (index_t i = rl_bound; i <= ru_bound; i++){
+        if (m->arr[i][cu_bound] == 1) {
+            m->arr[i][cl_bound-1] = 1;
+        }
+    }
+
+    // corners
+    if (m->arr[rl_bound][cl_bound] == 1){
+        m->arr[ru_bound+1][cu_bound+1] = 1;
+    }
+    if (m->arr[rl_bound][cu_bound] == 1){
+        m->arr[ru_bound+1][cl_bound-1] = 1;
+    }
+    if (m->arr[ru_bound][cl_bound] == 1){
+        m->arr[rl_bound-1][cu_bound+1] = 1;
+    }
+    if (m->arr[ru_bound][cu_bound] == 1){
+        m->arr[rl_bound-1][cl_bound-1] = 1;
+    }
+}
+
+
+/*
+*/
+void update(matrix* old, matrix* new){
+
+    index_t r = old->rows;
+    index_t c = old->cols;
+    value_t** old_arr = old->arr;
+    value_t temp = 0;
+
+    for (index_t i = 1; i < r-1; i++){
+        for (index_t j = 1; j < c-1; j++){
+            new->arr[i][j] = nodeUpdate(old_arr, i, j);
+        }
+    }
+
+    updateEdges(new, 1);
+}
+
+
+
+
+void iterate(simulation* sim){
+
+    for (index_t i = 0; i < sim->generations; i++){
+
+        if (sim->freq != 0 && i % (sim->freq) == 0 ){
+            printf("Count: %d\n", i);
+            printf("------------\n");
+            printArray(sim->old, 1);
+            printf("------------\n");
+        }
+        update(sim->old, sim->new);
+
+        matrix* temp = sim->old;
+        sim->old = sim->new;
+        sim->new = temp;
+    }
+
+    printf("final\n");
+    printf("------------\n");
+    printArray(sim->old, 1);
+    printf("------------\n");
 }
 
 
@@ -166,20 +301,37 @@ int main(int argc, char* argv[]){
         fclose(fd);
     }
 
-    printArray(sim->old);
-    
-    // initializes grid of numbers to all 0
-    /*if (argc == 6){
-        int rows, cols;
-        if (sscanf(argv[5], "%d", &rows) != 1){
+    // initializes grid of numbers
+    if (argc == 6){
+        if ( sscanf(argv[3], "%d", &sim->seed) != 1 ){
+            return 1;
+        }
+        if (sim->seed < 0){
+            srand(time(NULL));
+        }
+        else {
+            srand(sim->seed);
+        }
+
+        index_t rows, cols;
+        if (sscanf(argv[4], "%u", &rows) != 1){
             fprintf(stderr, "Error: Input is not numbers");
             exit(EXIT_FAILURE);
         }
-        if (sscanf(argv[6], "%d", &cols) != 1){
+        if (sscanf(argv[5], "%u", &cols) != 1){
             fprintf(stderr, "Error: Input is not numbers");
             exit(EXIT_FAILURE);
         }
-        sim->mat = initMat(rows, cols);
-    }*/
+
+
+        sim->old = initMat(rows+2, cols+2);
+        genRandVals(sim->old, 1);
+    }
+
+    sim->new = initMat(sim->old->rows, sim->old->cols);
+
+    iterate(sim);
+
+
     return 0;
 }
