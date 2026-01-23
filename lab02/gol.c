@@ -1,32 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-#include <stdint.h>
+#include "gol.h"
 
-typedef uint8_t value_t;
-typedef uint32_t index_t;
-typedef int32_t  init_t;
-
-typedef struct matrix{
-    index_t rows;
-    index_t cols;
-    value_t** arr;
-}matrix;
-
-
-typedef struct simulation{
-    init_t generations;
-    init_t freq;
-    init_t seed;
-    matrix* old;
-    matrix* new;
-}simulation;
-
-/*
-prints array
-*/ 
 void printArray(matrix* m, index_t offset){
     for (index_t  i = offset; i < m->rows-offset; i++){
         for (index_t j = offset; j < m->cols-offset; j++){
@@ -37,9 +10,7 @@ void printArray(matrix* m, index_t offset){
     printf("\n");
 }
 
-/*
-uses cmd line arguments to setup variables for simulations
-*/ 
+
 int parseArgs(simulation* sim, index_t offset, char* argv[]){
     if  ( sscanf(argv[offset], "%d", &sim->generations) != 1 ){
         return 1;
@@ -47,14 +18,10 @@ int parseArgs(simulation* sim, index_t offset, char* argv[]){
     if ( sscanf(argv[offset+1], "%d", &sim->freq) != 1 ){
         return 1;
     }
-
     return 0;
 }
 
 
-/*
-allocates memory to hold 2d grid of numbers
-*/ 
 matrix* initMat(index_t rows, index_t cols){
     matrix* mat = (matrix*) malloc(sizeof(matrix));
     mat->rows = rows;
@@ -68,9 +35,6 @@ matrix* initMat(index_t rows, index_t cols){
 }
 
 
-/*
-reads unsigned numbers from file to init grid of lives
-*/ 
 matrix* readFile(FILE* fd){
     char buf[1024];
     char *p_rows, *p_cols, *p_n;
@@ -100,18 +64,18 @@ matrix* readFile(FILE* fd){
 
     // read each line and changes the value in arr
     char *p_x, *p_y;
-    value_t x, y;
+    index_t x, y;
 
     for (index_t i = 0; i < n; i++){
         fgets(buf, sizeof buf, fd);
         p_x = strtok(buf, " ");
         p_y = strtok(NULL, " ");
 
-        if (sscanf(p_x, "%hhu", &x) != 1){
+        if (sscanf(p_x, "%u", &x) != 1){
             fprintf(stderr, "Error: File contains non-integer input");
             exit(EXIT_FAILURE);
         }
-        if (sscanf(p_y, "%hhu", &y) != 1){
+        if (sscanf(p_y, "%u", &y) != 1){
             fprintf(stderr, "Error: File contains non-integer input");
             exit(EXIT_FAILURE);
         }
@@ -129,9 +93,6 @@ matrix* readFile(FILE* fd){
 }
 
 
-/*
-generates random lives for the grid
-*/ 
 void genRandVals(matrix* mat, index_t offset){
 
     for (index_t i = offset; i < mat->rows-offset; i++){
@@ -142,10 +103,8 @@ void genRandVals(matrix* mat, index_t offset){
 }
 
 
-/*
-determines whether node at i and j will remain alive for next generation
-*/ 
 value_t nodeUpdate(value_t** m, index_t i, index_t j){
+    
     value_t nalive = 0;
     value_t isalive = m[i][j];
 
@@ -173,8 +132,6 @@ value_t nodeUpdate(value_t** m, index_t i, index_t j){
 }
 
 
-/*
-*/
 void updateEdges(matrix* m, index_t offset){
 
     index_t rows = m->rows;
@@ -223,14 +180,11 @@ void updateEdges(matrix* m, index_t offset){
 }
 
 
-/*
-*/
 void update(matrix* old, matrix* new){
 
     index_t r = old->rows;
     index_t c = old->cols;
     value_t** old_arr = old->arr;
-    value_t temp = 0;
 
     for (index_t i = 1; i < r-1; i++){
         for (index_t j = 1; j < c-1; j++){
@@ -240,7 +194,6 @@ void update(matrix* old, matrix* new){
 
     updateEdges(new, 1);
 }
-
 
 
 
@@ -285,7 +238,7 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
     }
 
-    // calls readFile if there were only 5 cmd line arguments
+    // reads file
     if (argc == 3){
         char filename[512]; 
         printf("Matrix file path: ");
@@ -301,11 +254,13 @@ int main(int argc, char* argv[]){
         fclose(fd);
     }
 
-    // initializes grid of numbers
+    // random init of lives
     if (argc == 6){
         if ( sscanf(argv[3], "%d", &sim->seed) != 1 ){
-            return 1;
+            fprintf(stderr, "Error: Input is not numbers");
+            exit(EXIT_FAILURE);
         }
+        
         if (sim->seed < 0){
             srand(time(NULL));
         }
@@ -331,7 +286,6 @@ int main(int argc, char* argv[]){
     sim->new = initMat(sim->old->rows, sim->old->cols);
 
     iterate(sim);
-
 
     return 0;
 }
