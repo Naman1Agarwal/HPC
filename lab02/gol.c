@@ -207,8 +207,11 @@ void iterate(simulation* sim){
             printArray(sim->old, 1);
             printf("------------\n");
         }
+
+        // we update the next generation of lives based on the old board
         update(sim->old, sim->new);
 
+        // switch for next update
         matrix* temp = sim->old;
         sim->old = sim->new;
         sim->new = temp;
