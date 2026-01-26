@@ -288,7 +288,19 @@ int main(int argc, char* argv[]){
 
     sim->new = initMat(sim->old->rows, sim->old->cols);
 
+    //struct timespec start, end;
+    
+    //clock_gettime(CLOCK_MONOTONIC, &start);
     iterate(sim);
+    //clock_gettime(CLOCK_MONOTONIC, &end);
+
+    /*double elapsed =
+        (end.tv_sec - start.tv_sec) +
+        (end.tv_nsec - start.tv_nsec) / 1e9;
+
+
+    printf("Elapsed time: %.9f seconds\n", elapsed);
+    */
 
     return 0;
 }
