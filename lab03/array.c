@@ -25,7 +25,10 @@ int parseArgs(simulation* sim, int offset, char* argv[]){
     if ( sscanf(argv[offset+3], "%d", &sim->seed) != 1 ){
         return 1;
     }
-     if ( sscanf(argv[offset+4], "%d", &sim->verbose) != 1 ){
+    if ( sscanf(argv[offset+4], "%d", &sim->threads) != 1 ){
+        return 1;
+    }
+    if ( sscanf(argv[offset+5], "%d", &sim->verbose) != 1 ){
         return 1;
     }
     return 0;
@@ -155,13 +158,51 @@ void getMatFromUser(simulation* sim){
 }
 
 
+void iter(){
+
+
+    for (int i = 0; i < iterations; i++){
+
+        // update given columns
+
+        for (int col_i = sc; col_i < ec; col_i++){
+            for (int row_j = 0; row_j < rows; row_j++){
+
+                temp = arr[col_i][row_j];
+                if (temp <= max && temp >= min){
+                    temp += (int) (21.0 * ((double) rand()/(RAND_MAX+1.0)) - 10);
+                    arr[col_i][row_j] = temp;
+                }
+
+            }
+        }
+
+        pthread_barrier_wait(&barrier);
+
+        // display grid if thread is 0
+        if (tid == 0){
+
+        }
+
+        pthread_barrier_wait(&barrier);
+
+
+
+
+
+
+    }
+
+    return valid;
+}
+
 int main(int argc, char* argv[]){
 
     // sim is an object that will store the state of our simulation
     simulation* sim = (simulation*) malloc(sizeof(simulation));
 
-    if (argc != 6){
-        fprintf(stderr, "Usage: %s iterations threshold frequency seeed verbosity\n", argv[0]);
+    if (argc != 7){
+        fprintf(stderr, "Usage: %s iterations threshold frequency seeed threads verbosity\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -182,8 +223,12 @@ int main(int argc, char* argv[]){
         srand(sim->seed);
     }
 
+    pthread_t th[sim->threads];
+    
+
+    //printArray(sim->mat);
+
     // clean memory
     clean(sim);
-
     return 0;
 }

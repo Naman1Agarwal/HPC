@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <pthread.h>
 
 // this struct will store our matrix of numbers 
 typedef struct matrix{
@@ -17,6 +18,7 @@ typedef struct simulation{
     int threshold;
     int freq;
     int seed;
+    int threads;
     int verbose;
     matrix* mat;
 }simulation;

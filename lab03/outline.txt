@@ -1,0 +1,24 @@
+
+program start:
+   - read arguments from command line
+   - save arguments to simulation struct
+   - read matrix from user
+   - init matrix by columns
+   - init values of matrix from file
+we now have a simulation struct and matrix struct
+
+
+program middle:
+    - create threads with pthread_create
+    - assign column indexes to each thread
+    - function that thread executes will take struct of arguments (column indexes)
+
+    update function:
+        - loop through cols/rows and update number
+    - after single update, threads wait uisng pthread_barrier_wait
+
+program end:
+
+    - call pthread_join to join threads
+    - call barrier_destroy
+    - free memory
