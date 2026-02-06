@@ -1,0 +1,30 @@
+    printf(
+        "%d %d %d %d %d %d\n", 
+        sim.iterations, 
+        sim.threshold,
+        sim.freq,
+        sim.seed,
+        sim.threads,
+        sim.verbose
+        );
+
+
+for (int i = 0; i < sim.threads; i++){
+        printf("%d %d %d \n", args[i].id, args[i].start_col, args[i].end_col);
+    }
+
+
+            /* update global continue if we still
+           have data within threshold, must use lock
+           as multiple threads might be writing to
+           this memory at the same time
+        */
+        if (cont == 1){
+            pthread_mutex_lock(&lock);
+            globalCont = 1;
+            pthread_mutex_unlock(&lock);
+        }
+
+ pthread_mutex_lock(&lock);
+        printf("Thread %d Iteration %d Cont %d\n", id, loop, global_cont);
+        pthread_mutex_unlock(&lock);
