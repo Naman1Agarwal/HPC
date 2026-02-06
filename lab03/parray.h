@@ -5,6 +5,7 @@
 #include <time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 typedef struct simulation{
     int iterations;
@@ -25,8 +26,18 @@ typedef struct{
     int end_col;
 }thread_args;
 
+// time struct from notes
+typedef struct {
+    int     secs;
+    int     usecs;
+} TIME_DIFF;
+
+
 #define FALSE 0
 #define TRUE 1
+
+
+TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end);
 
 
 int parseArgs(simulation* sim, int offset, char* argv[]);

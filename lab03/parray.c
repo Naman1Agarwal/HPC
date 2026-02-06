@@ -5,6 +5,26 @@ pthread_barrier_t barrier;
 pthread_mutex_t lock;
 int global_cont = 0;
 
+TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
+    TIME_DIFF * diff = (TIME_DIFF *) malloc ( sizeof (TIME_DIFF) );
+
+    if (start->tv_sec == end->tv_sec) {
+        diff->secs = 0;
+        diff->usecs = end->tv_usec - start->tv_usec;
+    }
+    else {
+        diff->usecs = 1000000 - start->tv_usec;
+        diff->secs = end->tv_sec - (start->tv_sec + 1);
+        diff->usecs += end->tv_usec;
+        if (diff->usecs >= 1000000) {
+            diff->usecs -= 1000000;
+            diff->secs += 1;
+        }
+    }
+
+    return diff;
+}
+
 int parseArgs(simulation* sim, int offset, char* argv[]){
     if  ( sscanf(argv[offset], "%d", &sim->iterations) != 1 ){
         return FALSE;
@@ -144,7 +164,7 @@ void getMatFromUser(simulation* sim){
 
 // pthread_create expects function of type void* (*) (void*)
 void* iter(void* varg){
-	
+
 	// get columns to update
 	thread_args* arg = (thread_args*) varg;
 	int id = arg->id;
@@ -158,6 +178,13 @@ void* iter(void* varg){
 	int** arr = sim.arr;
 	int temp;
 	int cont = 0;
+
+    if (sim.verbose > 0){
+        printf(
+            "tid %d    columns: %d:%d    (%d)\n", 
+            id, start_col, end_col, end_col-start_col+1
+        );
+    }
 
 	for (int loop = 0; loop < sim.iterations; loop++){
 
@@ -271,6 +298,10 @@ int main(int argc, char* argv[]){
     	rem -= 1;
     }
 
+    // get start time
+    struct timeval myTVstart, myTVend;
+    gettimeofday(&myTVstart, NULL);
+
     // run threads
     for (int i = 0; i < sim.threads; i++){
     	if (pthread_create(&threads[i], NULL, iter, (void*)&args[i]) != 0){
@@ -283,16 +314,23 @@ int main(int argc, char* argv[]){
     	pthread_join(threads[i], NULL);
     }
 
-    pthread_barrier_destroy(&barrier);
-    pthread_mutex_destroy(&lock);
+    gettimeofday(&myTVend, NULL);
+    TIME_DIFF* difference = my_difftime(&myTVstart, &myTVend);
 
     printf("final\n");
     printf("------------\n");
     printArray(pSim);
     printf("------------\n");
 
+    if (sim.verbose == 2){
+        printf("\n");
+        printf("time: sec %3d  microsec %6d \n", difference->secs, difference->usecs);
+    }
 
+    pthread_barrier_destroy(&barrier);
+    pthread_mutex_destroy(&lock);
     clean(pSim);
+    free(difference);
 
 	return 0;
 }
