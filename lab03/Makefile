@@ -1,8 +1,8 @@
-array: array.o
-	gcc -Wall -g array.o -o array.out
+parray: parray.o
+	gcc -Wall -g parray.o -o parray.out
 
-array.o: array.c array.h
-	gcc -Wall -g -c array.c -o array.o
+parray.o: parray.c parray.h
+	gcc -Wall -g -c parray.c -o parray.o
 
 clean:
-	rm -f array array.o
+	rm -f parray.out parray.o
