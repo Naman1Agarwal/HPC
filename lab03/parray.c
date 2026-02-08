@@ -5,6 +5,7 @@ pthread_barrier_t barrier;
 pthread_mutex_t lock;
 int global_cont = 0;
 
+// from notes
 TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
     TIME_DIFF * diff = (TIME_DIFF *) malloc ( sizeof (TIME_DIFF) );
 
@@ -25,6 +26,7 @@ TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
     return diff;
 }
 
+// get all cmd line args
 int parseArgs(simulation* sim, int offset, char* argv[]){
     if  ( sscanf(argv[offset], "%d", &sim->iterations) != 1 ){
         return FALSE;
@@ -47,6 +49,7 @@ int parseArgs(simulation* sim, int offset, char* argv[]){
     return TRUE;
 }
 
+// malloc memory for 2d grid
 void initMat(simulation* sim, int rows, int cols){
     sim->rows = rows;
     sim->cols = cols;
@@ -58,16 +61,18 @@ void initMat(simulation* sim, int rows, int cols){
     sim->arr = arr;
 }
 
+// print 2d grid
 void printArray(simulation* sim){
     for (int i = 0; i < sim->rows; i++){
         for (int j = 0; j < sim->cols; j++){
-            printf("%3d ", sim->arr[j][i]);
+            printf("%d ", sim->arr[j][i]);
         }
         printf("\n");
     }
     printf("\n");
 }
 
+// read 3 numbers from each line in a file
 void readFile(FILE* fd, simulation* sim){
     char buf[1024];
     char *p_rows, *p_cols, *p_n;
@@ -127,6 +132,7 @@ void readFile(FILE* fd, simulation* sim){
     }
 }
 
+// init 2d grid with file or just zeros
 void getMatFromUser(simulation* sim){
     int rows, cols;
 
@@ -195,8 +201,8 @@ void* iter(void* varg){
             for (int i = 0; i < rows; i++){
                 temp = arr[j][i];
                 if (temp <= max && temp >= min){
-                    //temp += (int) (21.0 * ((double) rand()/(RAND_MAX+1.0)) - 10);
-                    temp += id; //debugging purposes
+                    temp += (int) (21.0 * ((double) rand()/(RAND_MAX+1.0)) - 10);
+                    //temp += id; //debugging purposes
                     arr[j][i] = temp;
                     cont = 1;
                 }
@@ -204,7 +210,7 @@ void* iter(void* varg){
         }
 
         // update global continue if we still have data within threshold
-        if (cont == 1){
+        /*if (cont == 1){
             pthread_mutex_lock(&lock);
             global_cont = 1;
             pthread_mutex_unlock(&lock);
@@ -227,10 +233,11 @@ void* iter(void* varg){
         pthread_barrier_wait(&barrier);
 
         // thread 0 will reset the global cont to 0
-        // should avoid race conditions
+        // should avoid race conditions because of the
+        // barrier wait in line 219
         if (id == 0){
         	global_cont = 0;
-        }
+        }*/
 	}
 	return NULL;
 }
@@ -317,10 +324,10 @@ int main(int argc, char* argv[]){
     gettimeofday(&myTVend, NULL);
     TIME_DIFF* difference = my_difftime(&myTVstart, &myTVend);
 
-    printf("final\n");
-    printf("------------\n");
-    printArray(pSim);
-    printf("------------\n");
+    //printf("final\n");
+    //printf("------------\n");
+    //printArray(pSim);
+    //printf("------------\n");
 
     if (sim.verbose == 2){
         printf("\n");
