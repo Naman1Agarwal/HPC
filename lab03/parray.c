@@ -210,7 +210,7 @@ void* iter(void* varg){
         }
 
         // update global continue if we still have data within threshold
-        /*if (cont == 1){
+        if (cont == 1){
             pthread_mutex_lock(&lock);
             global_cont = 1;
             pthread_mutex_unlock(&lock);
@@ -237,7 +237,7 @@ void* iter(void* varg){
         // barrier wait in line 219
         if (id == 0){
         	global_cont = 0;
-        }*/
+        }
 	}
 	return NULL;
 }
@@ -324,10 +324,10 @@ int main(int argc, char* argv[]){
     gettimeofday(&myTVend, NULL);
     TIME_DIFF* difference = my_difftime(&myTVstart, &myTVend);
 
-    //printf("final\n");
-    //printf("------------\n");
-    //printArray(pSim);
-    //printf("------------\n");
+    printf("final\n");
+    printf("------------\n");
+    printArray(pSim);
+    printf("------------\n");
 
     if (sim.verbose == 2){
         printf("\n");
