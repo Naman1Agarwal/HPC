@@ -1,0 +1,44 @@
+// init part
+
+- get cmd line args from user
+    - generations, freq, # of threads, verbosity
+
+- init grid with either file or rand vals
+- create second grid
+
+- create threads array and args array
+    - args array will be array of structs that have col indexes
+    and ids
+
+// loop through generations
+- threads will loop through generations and sync after each generation
+
+in a genearation:
+    - to update a single point, loop around a point
+    and based on the rules, it is either alive or dead
+
+    - if the column id is 0 or last one, then these are responsible for updating
+    the extra column edges and corners around the grid
+    - use memcpy
+
+    - every thread will copy their top rows and bottom rows accordingly
+    - use memcpy
+
+    - threads might access the same columns (shared edges) but that is fine
+    because they are writing to different memory
+
+- after update:
+
+    - thread 0 will print grid
+
+    - thread 0 will switch pointers for old and new grid
+
+    - use barrier_wait to sync threads
+
+// end part
+
+- print the time of execution
+
+- print the final grid
+
+- clean memory via free
