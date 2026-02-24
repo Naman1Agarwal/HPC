@@ -18,6 +18,12 @@ int seed;
 size_t verbosity;
 size_t n_threads;
 
+typedef struct{
+    int id;
+    size_t start_col;
+    size_t end_col;
+}thread_args;
+
 #define TRUE 1
 #define FALSE 0
 
@@ -102,6 +108,14 @@ void readFile(FILE* fd){
 }
 
 void randMatrix(size_t offset){
+
+    if (seed < 0){
+        srand(time(NULL));
+    }
+    else{
+        srand(seed);
+    }
+
     for (size_t j = offset; j < cols-offset; j++){
         for (size_t i = offset; i < rows-offset; i++){
             old[j][i] = (uint8_t) ( rand()%2 );
@@ -160,6 +174,12 @@ read_file:
 
     return;
 }
+
+void* iter(void* varg){
+
+    return;
+}
+
 
 int main(int argc, char* argv[]){
 
