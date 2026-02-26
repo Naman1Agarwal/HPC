@@ -42,3 +42,14 @@ in a genearation:
 - print the final grid
 
 - clean memory via free
+
+    printf("Rows %d Cols %d \n", rows, cols);
+
+    for (size_t i = 0; i < n_threads; i++){
+        printf("Id: %d Start Column: %d End Column: %d \n", args[i].id, args[i].start_col, args[i].end_col);
+    }
+
+    printArray(0);
+
+    //printf("Cmd line args %lu %lu %lu %lu\n", generations, freq, verbosity, n_threads);
+    //printf("Cols and rows: %lu %lu\n", cols, rows);

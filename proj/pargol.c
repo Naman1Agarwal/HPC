@@ -19,13 +19,14 @@ size_t verbosity;
 size_t n_threads;
 
 typedef struct{
-    int id;
+    size_t id;
     size_t start_col;
     size_t end_col;
 }thread_args;
 
-#define TRUE 1
-#define FALSE 0
+pthread_barrier_t barrier;
+pthread_mutex_t lock;
+
 
 void printArray(size_t offset){
     for (size_t  i = offset; i < rows-offset; i++){
@@ -46,6 +47,11 @@ void initMat(size_t arg_rows, size_t arg_cols){
     old = (uint8_t**) malloc(sizeof(uint8_t*) * cols);
     for (size_t i = 0; i < cols; i++){
         old[i] = (uint8_t*) calloc(sizeof(uint8_t), rows);
+    }
+
+    new = (uint8_t**) malloc(sizeof(uint8_t*) * cols);
+    for (size_t i = 0; i < cols; i++){
+        new[i] = (uint8_t*) calloc(sizeof(uint8_t), rows);
     }
 }
 
@@ -107,6 +113,7 @@ void readFile(FILE* fd){
     }
 }
 
+
 void randMatrix(size_t offset){
 
     if (seed < 0){
@@ -122,6 +129,7 @@ void randMatrix(size_t offset){
         }
     }
 }
+
 
 void getMatFromUser(){
 
@@ -141,8 +149,8 @@ void getMatFromUser(){
 
 read_columns:
     printf("num cols: ");
-    if ( scanf("%lu", &arg_cols) != 1 ){
-        fprintf(stderr, "Input was not an unsigned integer.\n");
+    if ( scanf("%lu", &arg_cols) != 1 || arg_cols == 0){
+        fprintf(stderr, "Input was not an unsigned integer > 0.\n");
         exit(EXIT_FAILURE);
     }
     printf("seed: ");
@@ -175,9 +183,94 @@ read_file:
     return;
 }
 
+
+uint8_t nodeUpdate(size_t i, size_t j){
+
+    uint8_t nalive = 0;
+    uint8_t isalive = old[j][i];
+
+    for (size_t testj = j-1; testj <= j+1; testj++){
+        for (size_t testi = i-1; testi <= i+1; testi++){
+            if (old[testj][testi] == 1){
+                nalive++;
+            }
+        }
+    }
+
+    nalive -= isalive;
+
+    if (isalive && (nalive == 2 || nalive == 3)){
+        return 1;
+    }
+    else if (!isalive && (nalive == 3)){
+        return 1;
+    }
+    return 0;
+}
+
+
 void* iter(void* varg){
 
-    return;
+    thread_args* arg = (thread_args*) varg;
+    size_t id = arg->id;
+    size_t start_col = arg->start_col;
+    size_t end_col = arg->end_col;
+
+    if (verbosity > 0){
+        printf("Id: %d Start Column: %d End Column: %d\n", id, start_col, end_col);
+    }
+
+    for (size_t generation = 0; generation < generations; generation++){
+
+        for (size_t j = start_col; j <= end_col; j++){
+            for (size_t i = 1; i <= rows-2; i++){
+                new[j][i] = nodeUpdate(i, j);
+            }
+        }
+
+        // update the outer row layer
+        for (size_t j = start_col; j <= end_col; j++){
+            if (new[j][1] == 1){
+                new[j][rows-1] = 1;
+            }
+            if (new[j][rows-2] == 1){
+                new[j][0] = 1;
+            }
+        }
+
+        // update corners and sides
+        if (id == 0){
+            memcpy(new[cols-1]+1, new[1]+1, rows-2);
+            new[cols-1][rows-1] = new[1][1];
+            new[cols-1][0]      = new[1][rows-2];
+        }
+        else if (id == n_threads-1){
+            memcpy(new[0]+1, new[cols-2]+1, rows-2);
+            new[0][rows-1] = new[cols-2][1];
+            new[0][0]      = new[cols-2][rows-2];
+        }
+
+        pthread_barrier_wait(&barrier);
+
+        // display and switch arrays grid
+        if (id == 0){
+
+            uint8_t** temp = new;
+            new = old;
+            old = temp;
+
+            if (freq != 0 && generation % freq == 0){
+                printf("Count: %d\n", generation+1);
+                printf("------------\n");
+                printArray(1);
+                printf("------------\n");
+            }
+        }
+
+        pthread_barrier_wait(&barrier);
+    }
+
+    return NULL;
 }
 
 
@@ -206,10 +299,58 @@ int main(int argc, char* argv[]){
 
     getMatFromUser();
 
-    printArray(0);
+    if (n_threads > (cols-2)){
+        fprintf(stderr, "Error: threads exceed columns in matrix; reduce # of threads");
+        exit(EXIT_FAILURE);
+    }
 
-    //printf("Cmd line args %lu %lu %lu %lu\n", generations, freq, verbosity, n_threads);
-    //printf("Cols and rows: %lu %lu\n", cols, rows);
+    // distribute columns for the threads
+    pthread_t threads[n_threads];
+    thread_args args[n_threads];
+    
+    int cols_per_thread = (cols-2) / n_threads;
+    int rem  = (cols-2) % n_threads;
+    int start_col = 1;
+    int end_col = 1;
+
+    for (int i = 0; i < n_threads; i++){
+        
+        end_col = start_col + cols_per_thread-1 + (rem > 0 ? 1 : 0);
+
+        args[i].id = i;
+        args[i].start_col = start_col;
+        args[i].end_col = end_col;
+
+        start_col = end_col+1;
+        rem -= 1;
+    }
+
+    // start thread process
+    if (pthread_barrier_init(&barrier, NULL, n_threads) != 0){
+        fprintf(stderr, "Error: pthread_barrier_init failed");
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < n_threads; i++){
+        if (pthread_create(&threads[i], NULL, iter, (void*)&args[i]) != 0){
+            fprintf(stderr, "Error: pthread_create failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (freq != 0){
+        printf("Final\n");
+        printf("------------\n");
+        printArray(1);
+        printf("------------\n");
+    }
+
+    // join threads and clean
+    for (int i = 0; i < n_threads; i++){
+        pthread_join(threads[i], NULL);
+    }
+
+    pthread_barrier_destroy(&barrier);
+
 
     return 0;
 }
