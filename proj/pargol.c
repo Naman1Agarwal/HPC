@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-#include <stdint.h>
-#include <pthread.h>
-#include <sys/time.h>
+#include "pargol.h"
 
 size_t rows;
 size_t cols;
@@ -18,17 +11,33 @@ int seed;
 size_t verbosity;
 size_t n_threads;
 
-typedef struct{
-    size_t id;
-    size_t start_col;
-    size_t end_col;
-}thread_args;
-
 pthread_barrier_t barrier;
-pthread_mutex_t lock;
+
+
+// from notes used to measure execution time
+TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
+    TIME_DIFF * diff = (TIME_DIFF *) malloc ( sizeof (TIME_DIFF) );
+
+    if (start->tv_sec == end->tv_sec) {
+        diff->secs = 0;
+        diff->usecs = end->tv_usec - start->tv_usec;
+    }
+    else {
+        diff->usecs = 1000000 - start->tv_usec;
+        diff->secs = end->tv_sec - (start->tv_sec + 1);
+        diff->usecs += end->tv_usec;
+        if (diff->usecs >= 1000000) {
+            diff->usecs -= 1000000;
+            diff->secs += 1;
+        }
+    }
+
+    return diff;
+}
 
 
 void printArray(size_t offset){
+    // print old array
     for (size_t  i = offset; i < rows-offset; i++){
         for (size_t j = offset; j < cols-offset; j++){
             printf("%u ", (unsigned int) old[j][i]);
@@ -132,7 +141,7 @@ void randMatrix(size_t offset){
 
 
 void getMatFromUser(){
-
+    // read rows and cols from user
     size_t arg_rows, arg_cols;
 
     printf("num rows: ");
@@ -189,6 +198,7 @@ uint8_t nodeUpdate(size_t i, size_t j){
     uint8_t nalive = 0;
     uint8_t isalive = old[j][i];
 
+    // loop through all neighbors
     for (size_t testj = j-1; testj <= j+1; testj++){
         for (size_t testi = i-1; testi <= i+1; testi++){
             if (old[testj][testi] == 1){
@@ -217,7 +227,7 @@ void* iter(void* varg){
     size_t end_col = arg->end_col;
 
     if (verbosity > 0){
-        printf("Id: %d Start Column: %d End Column: %d\n", id, start_col, end_col);
+        printf("Id: %ld Start Column: %ld End Column: %ld\n", id, start_col, end_col);
     }
 
     for (size_t generation = 0; generation < generations; generation++){
@@ -230,12 +240,8 @@ void* iter(void* varg){
 
         // update the outer row layer
         for (size_t j = start_col; j <= end_col; j++){
-            if (new[j][1] == 1){
-                new[j][rows-1] = 1;
-            }
-            if (new[j][rows-2] == 1){
-                new[j][0] = 1;
-            }
+            new[j][rows-1] = new[j][1];
+            new[j][0] = new[j][rows-2];
         }
 
         // update corners and sides
@@ -255,22 +261,32 @@ void* iter(void* varg){
         // display and switch arrays grid
         if (id == 0){
 
+            if (freq != 0 && generation % freq == 0){
+                printf("------------\n");
+                printf("Count: %ld\n", generation);
+                printf("------------\n");
+                printArray(1);
+            }
+
             uint8_t** temp = new;
             new = old;
             old = temp;
-
-            if (freq != 0 && generation % freq == 0){
-                printf("Count: %d\n", generation+1);
-                printf("------------\n");
-                printArray(1);
-                printf("------------\n");
-            }
         }
 
         pthread_barrier_wait(&barrier);
     }
 
     return NULL;
+}
+
+
+void clean(){
+    for (size_t i = 0; i < cols; i++){
+        free(old[i]);
+        free(new[i]);
+    }
+    free(old);
+    free(new);
 }
 
 
@@ -292,15 +308,15 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "Error: %s could not be parsed as unsigned number.\n", argv[3]);
         exit(EXIT_FAILURE);
     }
-    if ( sscanf(argv[4], "%lu", &n_threads) != 1 ){
-        fprintf(stderr, "Error: %s could not be parsed as unsigned number.\n", argv[4]);
+    if ( sscanf(argv[4], "%lu", &n_threads) != 1 || n_threads == 0){
+        fprintf(stderr, "Error: %s could not be parsed as unsigned number > 0.\n", argv[4]);
         exit(EXIT_FAILURE);
     }
 
     getMatFromUser();
 
     if (n_threads > (cols-2)){
-        fprintf(stderr, "Error: threads exceed columns in matrix; reduce # of threads");
+        fprintf(stderr, "Error: threads exceed columns in matrix; reduce # of threads\n");
         exit(EXIT_FAILURE);
     }
 
@@ -330,6 +346,11 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "Error: pthread_barrier_init failed");
         exit(EXIT_FAILURE);
     }
+
+    // measure time of execution
+    struct timeval myTVstart, myTVend;
+    gettimeofday(&myTVstart, NULL);
+
     for (int i = 0; i < n_threads; i++){
         if (pthread_create(&threads[i], NULL, iter, (void*)&args[i]) != 0){
             fprintf(stderr, "Error: pthread_create failed");
@@ -337,20 +358,31 @@ int main(int argc, char* argv[]){
         }
     }
 
+    // join threads and clean
+    for (int i = 0; i < n_threads; i++){
+        pthread_join(threads[i], NULL);
+    }
+
+    gettimeofday(&myTVend, NULL);
+    TIME_DIFF* difference = my_difftime(&myTVstart, &myTVend);
+
     if (freq != 0){
+        printf("------------\n");
         printf("Final\n");
         printf("------------\n");
         printArray(1);
         printf("------------\n");
     }
 
-    // join threads and clean
-    for (int i = 0; i < n_threads; i++){
-        pthread_join(threads[i], NULL);
+     if (verbosity == 2){
+        printf("\n");
+        printf("time: sec %3d  microsec %6d \n", difference->secs, difference->usecs);
     }
 
-    pthread_barrier_destroy(&barrier);
 
+    pthread_barrier_destroy(&barrier);
+    clean();
+    free(difference);
 
     return 0;
 }
