@@ -5,11 +5,50 @@
 #include <errno.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <omp.h>
 
-void printArray(uint8_t** arr, size_t offset){
-    for (size_t  i = offset; i < rows-offset; i++){
-        for (size_t j = offset; j < cols-offset; j++){
-            printf("%u ", (unsigned int) arr[j][i]);
+size_t g_rows;
+size_t g_cols;
+uint8_t** g_new;
+uint8_t** g_old;
+
+size_t generations;
+size_t freq;
+size_t verbosity;
+size_t n_threads;
+
+typedef struct {
+    int     secs;
+    int     usecs;
+} TIME_DIFF;
+
+
+void initMat(){
+
+    g_old = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
+    g_new = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
+    
+    for (size_t i = 0; i < g_cols; i++){
+        g_old[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
+        g_new[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
+    }
+}
+
+
+void randMatrix(size_t offset){
+
+    for (size_t j = offset; j < g_cols-offset; j++){
+        for (size_t i = offset; i < g_rows-offset; i++){
+            g_old[j][i] = (uint8_t) ( rand()%2 );
+        }
+    }
+}
+
+
+void printArray(size_t offset){
+    for (size_t  i = offset; i < g_rows-offset; i++){
+        for (size_t j = offset; j < g_cols-offset; j++){
+            printf("%u ", (unsigned int) g_old[j][i]);
         }
         printf("\n");
     }
@@ -17,26 +56,7 @@ void printArray(uint8_t** arr, size_t offset){
 }
 
 
-uint8_t** initMat(size_t rows, size_t cols){
-
-    uint8_t** arr = (uint8_t**) malloc(sizeof(uint8_t*) * cols);
-    for (size_t i = 0; i < cols; i++){
-        arr[i] = (uint8_t*) calloc(sizeof(uint8_t), rows);
-    }
-
-    return arr;
-}
-
-void randMatrix(uint8_t** arr, size_t offset){
-
-    for (size_t j = offset; j < cols-offset; j++){
-        for (size_t i = offset; i < rows-offset; i++){
-            arr[j][i] = (uint8_t) ( rand()%2 );
-        }
-    }
-}
-
-uint8_t** readFile(FILE* fd){
+void readFile(FILE* fd){
 
     size_t rows, cols, n;
 
@@ -45,7 +65,9 @@ uint8_t** readFile(FILE* fd){
         exit(EXIT_FAILURE);
     }
 
-    uint8_t* arr = initMat(rows+2, cols+2);
+    g_rows = rows+2;
+    g_cols = cols+2;
+    initMat();
 
     size_t x, y;
     for (size_t i = 0; i < n; i++){
@@ -59,14 +81,13 @@ uint8_t** readFile(FILE* fd){
             exit(EXIT_FAILURE);
         }
 
-        arr[y+1][x+1] = 1;
+        g_old[y+1][x+1] = 1;
     }
-
-    return arr;
 }
 
+
 void getMatFromUser() {
-    
+
     size_t rows, cols;
 
     printf("num rows: ");
@@ -75,10 +96,10 @@ void getMatFromUser() {
         exit(EXIT_FAILURE);
     }
     
-    if (arg_rows != 0) {
+    if (rows != 0) {
         goto read_columns;
     }
-    else if (arg_rows == 0){
+    else if (rows == 0){
         goto read_file;
     }
 
@@ -91,13 +112,16 @@ read_columns:
         exit(EXIT_FAILURE);
     }
     
+    int seed;
     printf("seed: ");
     if ( scanf("%d", &seed) != 1 ){
         fprintf(stderr, "Input was not an integer.\n");
         exit(EXIT_FAILURE);
     }
 
-    uint8_t** arr = initMat(rows, cols);
+    g_rows = rows+2;
+    g_cols = cols+2;
+    initMat();
 
     if (seed < 0){
         srand(time(NULL));
@@ -105,15 +129,15 @@ read_columns:
     else{
         srand(seed);
     }
-    randMatrix(arr, 1);
+    randMatrix(1);
 
     return;
 
 read_file:
 
-    char filename[1024]; 
+    char filename[1024] = { 0 }; 
     printf("Matrix file path: ");
-    scanf("%1024s", filename);
+    scanf("%1023s", filename);
 
     FILE* fd = fopen(filename, "r");
     if (fd == NULL){
@@ -121,12 +145,196 @@ read_file:
         exit(EXIT_FAILURE);
     }
 
-    uint8_t** arr = readFile(fd);
+    readFile(fd);
     fclose(fd);
+
     return;
+}
+
+
+void parseCmdLine(int argc, char* argv[]){
+    if (argc != 5){
+        fprintf(stderr, "Usage: %s <generations> <frequency> <verbosity> <threads>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    if ( sscanf(argv[1], "%lu", &generations) != 1 ){
+        fprintf(stderr, "Error: %s could not be parsed as unsigned number.\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+    if ( sscanf(argv[2], "%lu", &freq) != 1 ){
+        fprintf(stderr, "Error: %s could not be parsed as unsigned number.\n", argv[2]);
+        exit(EXIT_FAILURE);
+    }
+    if ( sscanf(argv[3], "%lu", &verbosity) != 1 ){
+        fprintf(stderr, "Error: %s could not be parsed as unsigned number.\n", argv[3]);
+        exit(EXIT_FAILURE);
+    }
+    if ( sscanf(argv[4], "%lu", &n_threads) != 1 || n_threads == 0){
+        fprintf(stderr, "Error: %s could not be parsed as unsigned number > 0.\n", argv[4]);
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+// check if a single node will stay alive or die
+uint8_t nodeUpdate(size_t i, size_t j){
+
+    uint8_t nalive = 0;
+    uint8_t isalive = g_old[j][i];
+
+    // loop through all neighbors
+    for (size_t testj = j-1; testj <= j+1; testj++){
+        for (size_t testi = i-1; testi <= i+1; testi++){
+            if (g_old[testj][testi] == 1){
+                nalive++;
+            }
+        }
+    }
+
+    nalive -= isalive;
+
+    if (isalive && (nalive == 2 || nalive == 3)){
+        return 1;
+    }
+    else if (!isalive && (nalive == 3)){
+        return 1;
+    }
+    return 0;
+}
+
+
+void iter(){
+
+    size_t start_col, end_col;
+
+    // calculate each thread's area
+    int id = omp_get_thread_num();
+    int cols_per_thread = (g_cols-2) / n_threads;
+    start_col = cols_per_thread * id + 1;
+    end_col = start_col + cols_per_thread - 1;
+    if (id == n_threads-1) {
+        end_col += (g_cols-2) % n_threads;
+    }
+
+    if (verbosity > 0) {
+        printf("Id: %u Start Column: %lu End Column: %lu\n", id, start_col, end_col);
+    }
+
+    for (size_t generation = 0; generation < generations; generation++) {
+
+        for (size_t j = start_col; j <= end_col; j++) {
+            for (size_t i = 1; i <= g_rows-2; i++) {
+                g_new[j][i] = nodeUpdate(i, j);
+            }
+        }
+
+        // update the outer row layer
+        for (size_t j = start_col; j <= end_col; j++) {
+            g_new[j][g_rows-1] = g_new[j][1];
+            g_new[j][0] = g_new[j][g_rows-2];
+        }
+
+        // update corners and sides
+        if (id == 0) {
+            memcpy(g_new[g_cols-1]+1, g_new[1]+1, g_rows-2);
+            g_new[g_cols-1][g_rows-1] = g_new[1][1];
+            g_new[g_cols-1][0]      = g_new[1][g_rows-2];
+        }
+        else if (id == n_threads-1) {
+            memcpy(g_new[0]+1, g_new[g_cols-2]+1, g_rows-2);
+            g_new[0][g_rows-1] = g_new[g_cols-2][1];
+            g_new[0][0]      = g_new[g_cols-2][g_rows-2];
+        }
+
+        #pragma omp barrier
+        
+        // display and switch arrays grid
+        if (id == 0) {
+
+            if (freq != 0 && generation % freq == 0){
+                printf("------------\n");
+                printf("Count: %ld\n", generation);
+                printf("------------\n");
+                printArray(1);
+            }
+
+            uint8_t** temp = g_new;
+            g_new = g_old;
+            g_old = temp;
+        }
+        
+        # pragma omp barrier
+    }
+}
+
+// from notes used to measure execution time
+TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
+    TIME_DIFF * diff = (TIME_DIFF *) malloc ( sizeof (TIME_DIFF) );
+
+    if (start->tv_sec == end->tv_sec) {
+        diff->secs = 0;
+        diff->usecs = end->tv_usec - start->tv_usec;
+    }
+    else {
+        diff->usecs = 1000000 - start->tv_usec;
+        diff->secs = end->tv_sec - (start->tv_sec + 1);
+        diff->usecs += end->tv_usec;
+        if (diff->usecs >= 1000000) {
+            diff->usecs -= 1000000;
+            diff->secs += 1;
+        }
+    }
+
+    return diff;
+}
+
+void clean(){
+    for (size_t i = 0; i < g_cols; i++){
+        free(g_old[i]);
+        free(g_new[i]);
+    }
+    free(g_old);
+    free(g_new);
 }
 
 int main(int argc, char* argv[]){
 
-    return 1;
+    parseCmdLine(argc, argv);
+
+    getMatFromUser();
+
+    if (n_threads > (g_cols-2)){
+        fprintf(stderr, "Error: threads exceed columns in matrix; reduce # of threads\n");
+        exit(EXIT_FAILURE);
+    }
+
+    omp_set_num_threads(n_threads);
+
+    struct timeval myTVstart, myTVend;
+    gettimeofday(&myTVstart, NULL);
+
+#pragma omp parallel
+    iter();
+
+    gettimeofday(&myTVend, NULL);
+    TIME_DIFF* difference = my_difftime(&myTVstart, &myTVend);
+
+    if (freq != 0){
+        printf("------------\n");
+        printf("Final\n");
+        printf("------------\n");
+        printArray(1);
+        printf("------------\n");
+    }
+
+     if (verbosity == 2){
+        printf("\n");
+        printf("time: sec %3d  microsec %6d \n", difference->secs, difference->usecs);
+    }
+
+    clean();
+    free(difference);
+
+    return 0;
 }
+
