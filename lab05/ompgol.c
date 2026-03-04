@@ -161,7 +161,7 @@ uint8_t nodeUpdate(size_t i, size_t j){
     uint8_t isalive = g_old[j][i];
 
     // does not make sense to parallelize this small loop 
-    //#pragma omp parallel for reduction (+: nalive)
+    // #pragma omp parallel for reduction (+: nalive)
     for (size_t testj = j-1; testj <= j+1; testj++){
         for (size_t testi = i-1; testi <= i+1; testi++){
             if (g_old[testj][testi] == 1){
@@ -192,7 +192,8 @@ void iter(){
                 g_new[j][i] = nodeUpdate(i, j);
             }
         }
-//#pragma omp parallel for
+        
+        //#pragma omp parallel for
         for (size_t j = 1; j <= g_cols-2; j++) {
             g_new[j][g_rows-1] = g_new[j][1];
             g_new[j][0] = g_new[j][g_rows-2];
