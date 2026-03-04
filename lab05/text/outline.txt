@@ -1,0 +1,40 @@
+
+ompgol and basicompgol.c follow the same basic structure:
+
+	- initialization (read input from user, set up grid)
+	- iter() (loop through generations)
+	- terminate (free memory, print final information)
+
+Initialization Steps:
+	- read cmd line arguments like generations, frequency, etc
+
+	- call GetMatFromUser(): either read from file or init random grid
+
+Iter() in basicompgol.c:
+	- use "#pragma omp parallel" above so each thread executes its own copy of this function
+
+	- based on id, assign certain area of columns to thread
+
+	- loop through generations, and update respective nodes
+
+	- update halo ring
+
+	- if the thread id is 0, switch the old and new arrays and print array
+	- barriers are used so each thread starts the next generation at the same time
+
+Iter() in ompgol.c:
+
+	- loop through generations and update every node in the gird
+		- this is a nested for loop that loops through the whole grid and calls update
+		- added "#pragma omp parallel for collapse(2)" above this nested for loop so threads
+		can split the execution of this for loop among them
+
+	- update the halo ring
+
+	- print array and switch old and new array
+
+Termination:
+
+	- print time of execution
+
+	- free the memory that the grids take
