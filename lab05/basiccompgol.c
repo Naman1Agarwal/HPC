@@ -263,7 +263,7 @@ void iter(){
             g_old = temp;
         }
         
-        # pragma omp barrier
+        #pragma omp barrier
     }
 }
 

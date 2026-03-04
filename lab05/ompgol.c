@@ -118,6 +118,9 @@ read_columns:
 
     g_rows = rows+2;
     g_cols = cols+2;
+
+    printf("%lu %lu \n", g_rows, g_cols);
+
     initMat();
 
     if (seed < 0){
@@ -171,6 +174,7 @@ uint8_t nodeUpdate(size_t i, size_t j){
     uint8_t isalive = g_old[j][i];
 
     // loop through all neighbors
+    #pragma omp parallel for reduction (+: nalive)
     for (size_t testj = j-1; testj <= j+1; testj++){
         for (size_t testi = i-1; testi <= i+1; testi++){
             if (g_old[testj][testi] == 1){
@@ -195,17 +199,19 @@ void iter(){
 
     for (size_t generation = 0; generation < generations; generation++) {
 
+        #pragma omp parallel for collapse(2)
         for (size_t j = 1; j <= g_cols-2; j++) {
             for (size_t i = 1; i <= g_rows-2; i++) {
                 g_new[j][i] = nodeUpdate(i, j);
             }
         }
 
-        // update the outer row layer
+        #pragma omp parallel for
         for (size_t j = 1; j <= g_cols-2; j++) {
             g_new[j][g_rows-1] = g_new[j][1];
             g_new[j][0] = g_new[j][g_rows-2];
         }
+
 
         // update sides
         memcpy(g_new[g_cols-1]+1, g_new[1]+1, g_rows-2);
@@ -213,9 +219,9 @@ void iter(){
 
         // update corners
         g_new[g_cols-1][g_rows-1] = g_new[1][1];
-        g_new[g_cols-1][0]      = g_new[1][g_rows-2];
-        g_new[0][g_rows-1] = g_new[g_cols-2][1];
-        g_new[0][0]      = g_new[g_cols-2][g_rows-2];
+        g_new[g_cols-1][0]        = g_new[1][g_rows-2];
+        g_new[0][g_rows-1]        = g_new[g_cols-2][1];
+        g_new[0][0]               = g_new[g_cols-2][g_rows-2];
 
         if (freq != 0 && generation % freq == 0){
             printf("------------\n");
