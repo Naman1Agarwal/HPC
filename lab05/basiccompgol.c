@@ -28,7 +28,7 @@ void initMat(){
     g_old = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
     g_new = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
     
-    for (size_t i = 0; i < g_cols; i++){
+    for (size_t i = 0; i < g_cols; i++) {
         g_old[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
         g_new[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
     }
@@ -37,8 +37,8 @@ void initMat(){
 
 void randMatrix(size_t offset){
 
-    for (size_t j = offset; j < g_cols-offset; j++){
-        for (size_t i = offset; i < g_rows-offset; i++){
+    for (size_t j = offset; j < g_cols-offset; j++) {
+        for (size_t i = offset; i < g_rows-offset; i++) {
             g_old[j][i] = (uint8_t) ( rand()%2 );
         }
     }
@@ -46,8 +46,8 @@ void randMatrix(size_t offset){
 
 
 void printArray(size_t offset){
-    for (size_t  i = offset; i < g_rows-offset; i++){
-        for (size_t j = offset; j < g_cols-offset; j++){
+    for (size_t  i = offset; i < g_rows-offset; i++) {
+        for (size_t j = offset; j < g_cols-offset; j++) {
             printf("%u ", (unsigned int) g_old[j][i]);
         }
         printf("\n");
