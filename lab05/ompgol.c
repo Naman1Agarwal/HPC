@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-#include <stdint.h>
-#include <sys/time.h>
-#include <omp.h>
+#include "ompgol.h"
 
 size_t g_rows;
 size_t g_cols;
@@ -15,10 +8,6 @@ uint8_t** g_old;
 size_t generations;
 size_t freq;
 
-typedef struct {
-    int     secs;
-    int     usecs;
-} TIME_DIFF;
 
 void printArray(size_t offset) {
     for (size_t  i = offset; i < g_rows-offset; i++) {
@@ -47,8 +36,8 @@ void initMat() {
     g_new = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
     
     for (size_t i = 0; i < g_cols; i++) {
-        g_old[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
-        g_new[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
+        g_old[i] = (uint8_t*) calloc(g_rows, sizeof(uint8_t));
+        g_new[i] = (uint8_t*) calloc(g_rows, sizeof(uint8_t));
     }
 }
 
@@ -173,8 +162,8 @@ uint8_t nodeUpdate(size_t i, size_t j){
     uint8_t nalive = 0;
     uint8_t isalive = g_old[j][i];
 
-    // loop through all neighbors
-    #pragma omp parallel for reduction (+: nalive)
+    // does not make sense to parallelize this small loop 
+    //#pragma omp parallel for reduction (+: nalive)
     for (size_t testj = j-1; testj <= j+1; testj++){
         for (size_t testi = i-1; testi <= i+1; testi++){
             if (g_old[testj][testi] == 1){

@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <errno.h>
-#include <stdint.h>
-#include <sys/time.h>
-#include <omp.h>
+#include "basiccompgol.h"
 
 size_t g_rows;
 size_t g_cols;
@@ -17,20 +10,14 @@ size_t freq;
 size_t verbosity;
 size_t n_threads;
 
-typedef struct {
-    int     secs;
-    int     usecs;
-} TIME_DIFF;
-
-
 void initMat(){
 
     g_old = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
     g_new = (uint8_t**) malloc(sizeof(uint8_t*) * g_cols);
     
     for (size_t i = 0; i < g_cols; i++) {
-        g_old[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
-        g_new[i] = (uint8_t*) calloc(sizeof(uint8_t), g_rows);
+        g_old[i] = (uint8_t*) calloc(g_rows, sizeof(uint8_t));
+        g_new[i] = (uint8_t*) calloc(g_rows, sizeof(uint8_t));
     }
 }
 
@@ -337,4 +324,3 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
-
