@@ -1,4 +1,4 @@
-#include "basiccompgol.h"
+#include "basicompgol.h"
 
 size_t g_rows;
 size_t g_cols;
