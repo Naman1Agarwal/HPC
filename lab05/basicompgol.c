@@ -254,6 +254,7 @@ void iter(){
     }
 }
 
+
 // from notes used to measure execution time
 TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
     TIME_DIFF * diff = (TIME_DIFF *) malloc ( sizeof (TIME_DIFF) );
@@ -275,6 +276,7 @@ TIME_DIFF * my_difftime (struct timeval * start, struct timeval * end){
     return diff;
 }
 
+
 void clean(){
     for (size_t i = 0; i < g_cols; i++){
         free(g_old[i]);
@@ -283,6 +285,7 @@ void clean(){
     free(g_old);
     free(g_new);
 }
+
 
 int main(int argc, char* argv[]){
 
