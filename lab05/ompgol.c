@@ -108,8 +108,6 @@ read_columns:
     g_rows = rows+2;
     g_cols = cols+2;
 
-    printf("%lu %lu \n", g_rows, g_cols);
-
     initMat();
 
     if (seed < 0){
@@ -188,14 +186,13 @@ void iter(){
 
     for (size_t generation = 0; generation < generations; generation++) {
 
-        #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
         for (size_t j = 1; j <= g_cols-2; j++) {
             for (size_t i = 1; i <= g_rows-2; i++) {
                 g_new[j][i] = nodeUpdate(i, j);
             }
         }
-
-        #pragma omp parallel for
+//#pragma omp parallel for
         for (size_t j = 1; j <= g_cols-2; j++) {
             g_new[j][g_rows-1] = g_new[j][1];
             g_new[j][0] = g_new[j][g_rows-2];
