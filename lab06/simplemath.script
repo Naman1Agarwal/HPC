@@ -1,0 +1,10 @@
+#!/bin/sh
+
+## Resource Request
+#SBATCH --partition=hpc
+#SBATCH --job-name=Naman_simplemath
+#SBATCH --output=simplemath.stdout
+#SBATCH --time=01:00:00
+
+## Job Steps
+mpirun simplemath_mpi
