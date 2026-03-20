@@ -1,0 +1,60 @@
+--------------------------------------------------------------------------
+By default, for Open MPI 4.0 and later, infiniband ports on a device
+are not used by default.  The intent is to use UCX for these devices.
+You can override this policy by setting the btl_openib_allow_ib MCA parameter
+to true.
+
+  Local host:              n0
+  Local adapter:           mlx5_0
+  Local port:              1
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   n0
+  Local device: mlx5_0
+--------------------------------------------------------------------------
+Rank: 0 Value: 41979000
+Rank: 2 Value: 45977002
+Rank: 6 Value: 53973006
+Rank: 22 Value: 5997022
+Rank: 20 Value: 1999020
+Rank: 4 Value: 49975004
+Rank: 26 Value: 13993026
+Rank: 24 Value: 9995024
+Rank: 1 Value: 43978001
+Rank: 21 Value: 3998021
+Rank: 8 Value: 57971008
+Rank: 28 Value: 17991028
+Rank: 15 Value: 71964015
+Rank: 35 Value: 31984035
+Rank: 12 Value: 65967012
+Rank: 32 Value: 25987032
+Rank: 13 Value: 67966013
+Rank: 33 Value: 27986033
+Rank: 17 Value: 75962017
+Rank: 37 Value: 35982037
+Rank: 14 Value: 69965014
+Rank: 3 Value: 47976003
+Rank: 34 Value: 29985034
+Rank: 23 Value: 7996023
+Rank: 5 Value: 51974005
+Rank: 25 Value: 11994025
+Rank: 10 Value: 61969010
+Rank: 30 Value: 21989030
+Rank: 19 Value: 79960019
+Rank: 39 Value: 39980039
+Rank: 16 Value: 73963016
+Rank: 36 Value: 33983036
+Rank: 11 Value: 63968011
+Rank: 31 Value: 23988031
+Rank: 18 Value: 77961018
+Rank: 38 Value: 37981038
+Rank: 9 Value: 59970009
+Rank: 29 Value: 19990029
+Rank: 7 Value: 55972007
+Rank: 27 Value: 15992027
+[n0.cluster.local:387692] 39 more processes have sent help message help-mpi-btl-openib.txt / ib port not selected
+[n0.cluster.local:387692] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+[n0.cluster.local:387692] 39 more processes have sent help message help-mpi-btl-openib.txt / error in device init

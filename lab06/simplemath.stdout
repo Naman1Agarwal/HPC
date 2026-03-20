@@ -1,0 +1,62 @@
+--------------------------------------------------------------------------
+By default, for Open MPI 4.0 and later, infiniband ports on a device
+are not used by default.  The intent is to use UCX for these devices.
+You can override this policy by setting the btl_openib_allow_ib MCA parameter
+to true.
+
+  Local host:              n0
+  Local adapter:           mlx5_0
+  Local port:              1
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   n0
+  Local device: mlx5_0
+--------------------------------------------------------------------------
+[n0.cluster.local:387788] [[49545,0],0] ORTE_ERROR_LOG: Out of resource in file ../../orte/util/show_help.c at line 507
+Hello from process 0 of 40
+Hello from process 1 of 40
+Hello from process 2 of 40
+Hello from process 3 of 40
+Hello from process 4 of 40
+Hello from process 5 of 40
+Hello from process 6 of 40
+Hello from process 7 of 40
+Hello from process 8 of 40
+Hello from process 9 of 40
+Hello from process 10 of 40
+Hello from process 11 of 40
+Hello from process 12 of 40
+Hello from process 13 of 40
+Hello from process 14 of 40
+Hello from process 15 of 40
+Hello from process 16 of 40
+Hello from process 17 of 40
+Hello from process 18 of 40
+Hello from process 19 of 40
+Hello from process 20 of 40
+Hello from process 21 of 40
+Hello from process 22 of 40
+Hello from process 23 of 40
+Hello from process 24 of 40
+Hello from process 25 of 40
+Hello from process 26 of 40
+Hello from process 27 of 40
+Hello from process 28 of 40
+Hello from process 29 of 40
+Hello from process 30 of 40
+Hello from process 31 of 40
+Hello from process 32 of 40
+Hello from process 33 of 40
+Hello from process 34 of 40
+Hello from process 35 of 40
+Hello from process 36 of 40
+Hello from process 37 of 40
+Hello from process 38 of 40
+Hello from process 39 of 40
+Combined values sent: 1560
+[n0.cluster.local:387788] 39 more processes have sent help message help-mpi-btl-openib.txt / ib port not selected
+[n0.cluster.local:387788] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+[n0.cluster.local:387788] 38 more processes have sent help message help-mpi-btl-openib.txt / error in device init
