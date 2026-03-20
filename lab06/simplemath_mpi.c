@@ -37,7 +37,7 @@ int main(){
         MPI_Send(str, strlen(str)+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 
         int value_to_send = rank*2;
-        MPI_Send(&value_to_send, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(&value_to_send,1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
 
